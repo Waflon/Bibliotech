@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from typing import Annotated
 
 from contextlib import asynccontextmanager
@@ -12,6 +12,7 @@ import jwt
 import os
 
 from SQLManager import SQLManager
+from CRUD import CRUD
 # to get a string like this run:
 # openssl rand -hex 32
 load_dotenv()
@@ -73,14 +74,14 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
+def get_user(fake_users_db, username: str):
+    if username in fake_users_db:
+        user_dict = fake_users_db[username]
         return UserInDB(**user_dict)
 
 
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+def authenticate_user(fake_users_db, username: str, password: str):
+    user = get_user(fake_users_db, username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -162,3 +163,14 @@ async def read_own_items(
 #Para crearse una hash_password
 #clave_falsa = get_password_hash("os.getenv("PASSWORD"))
 #print(clave_falsa)
+
+@app.post("/api/v1/guardar")
+async def agregar_libro(isbn, nombre, fecha_publicacion, editorial):
+    try:
+        crud = CRUD()
+        respuesta = crud.nueva_entrada(isbn, nombre, fecha_publicacion, editorial)
+        if respuesta["status"] == 200:
+            return {}
+        return {}
+    except Exception as e:
+        return {"error":e}
