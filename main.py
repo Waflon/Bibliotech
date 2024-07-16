@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
@@ -10,6 +11,7 @@ from dotenv import load_dotenv
 import jwt
 import os
 
+from SQLManager import SQLManager
 # to get a string like this run:
 # openssl rand -hex 32
 load_dotenv()
@@ -49,13 +51,20 @@ class UserInDB(User):
     hashed_password: str
 
 
+#CODIGO
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app = FastAPI()
+db = SQLManager()
+@asynccontextmanager
+async def lifespan(app: FastAPI): #solo verificamos la tabla al inicial el server
+    db.connect()
+    db.create_table()
+    yield  # Code that runs before server starts
 
+app = FastAPI(lifespan=lifespan)
 
+# Validar la API KEY
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -151,5 +160,5 @@ async def read_own_items(
 
 
 #Para crearse una hash_password
-#clave_falsa = get_password_hash("clavefalsa")
+#clave_falsa = get_password_hash("os.getenv("PASSWORD"))
 #print(clave_falsa)
